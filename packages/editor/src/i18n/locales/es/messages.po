@@ -14653,6 +14653,15 @@ msgstr "Vestidor"
 msgid "editor.roomName.workshop"
 msgstr "Taller"
 
+# Source-Hash: 4323751093d4c560
+# Review: required
+# AI-Provider: claude-code
+# English: "Still loading the project. Editing is paused until it finishes."
+#: packages/editor/src/components/editor/index.tsx
+#, fuzzy
+msgid "editor.sceneData.pending"
+msgstr "Todavía se está cargando el proyecto. La edición está en pausa hasta que termine."
+
 # Source-Hash: 83909f82446ee9c3
 # Review: required
 # AI-Provider: claude-code
@@ -15592,6 +15601,59 @@ msgstr "Actualizar instantánea"
 #, fuzzy
 msgid "editor.sidebar.panels.zonePanel.viewSnapshot"
 msgstr "Ver instantánea"
+
+# Source-Hash: 7890c110650ad1e5
+# Review: required
+# English: "Browse plugins"
+#: packages/editor/src/components/ui/sidebar/plugins-menu-panel.tsx
+#, fuzzy
+msgid "editor.sidebar.pluginsMenu.browse"
+msgstr "Explorar complementos"
+
+# Source-Hash: fd7380e83e3c88b3
+# Review: required
+# English: "No plugins in this project yet."
+#: packages/editor/src/components/ui/sidebar/plugins-menu-panel.tsx
+#, fuzzy
+msgid "editor.sidebar.pluginsMenu.empty"
+msgstr "Aún no hay complementos en este proyecto."
+
+# Source-Hash: 8284b6d9e4c05fb1
+# Review: required
+# English: "Hide menu"
+#: packages/editor/src/components/ui/sidebar/tab-bar.tsx
+#, fuzzy
+msgid "editor.sidebar.sideMenu.hide"
+msgstr "Ocultar menú"
+
+# Source-Hash: 9fc7a39bc32f287a
+# Review: required
+# AI-Provider: claude-code
+# AI-Model: claude-opus-5-5
+# English: "Plugins"
+#: packages/editor/src/components/editor/index.tsx
+#: packages/editor/src/components/ui/sidebar/use-plugin-panels.tsx
+#, fuzzy
+msgid "editor.sidebar.sideMenu.plugins"
+msgstr "Complementos"
+
+# Source-Hash: 5e1ae5cd25820c60
+# Review: required
+# English: "Show menu"
+#: packages/editor/src/components/ui/sidebar/tab-bar.tsx
+#, fuzzy
+msgid "editor.sidebar.sideMenu.showLabel"
+msgstr "Mostrar menú"
+
+# Source-Hash: 316a5e154c1e0257
+# Review: required
+# AI-Provider: claude-code
+# AI-Model: claude-opus-5-5
+# English: "Close panel"
+#: packages/editor/src/components/editor/editor-layout-v2.tsx
+#, fuzzy
+msgid "editor.sidebar.toolDock.close"
+msgstr "Cerrar panel"
 
 # Source-Hash: 58b05af5b5724efb
 # Review: required

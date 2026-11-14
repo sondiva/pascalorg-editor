@@ -67,6 +67,7 @@ import { useAutoFrame } from '../../hooks/use-auto-frame'
 import { type SaveStatus, useAutoSave } from '../../hooks/use-auto-save'
 import { useKeyboard } from '../../hooks/use-keyboard'
 import { useSaveShortcut } from '../../hooks/use-save-shortcut'
+import { useSceneLoader } from '../../hooks/use-scene-loader'
 import { type HINT_KEY_NAMES, toolHintKey, toolHintKeyDescriptor } from '../../i18n/node-messages'
 import { useCeilingEditSessionOwner } from '../../lib/ceiling-edit-session'
 import { showsWholeBuilding, useEditorLevelDisplay } from '../../lib/editor-level-display'
@@ -119,8 +120,9 @@ import { AppSidebar } from '../ui/sidebar/app-sidebar'
 import type { ExtraPanel } from '../ui/sidebar/icon-rail'
 import { SettingsPanel, type SettingsPanelProps } from '../ui/sidebar/panels/settings-panel'
 import { SitePanel, type SitePanelProps } from '../ui/sidebar/panels/site-panel'
+import { PluginsMenuPanel } from '../ui/sidebar/plugins-menu-panel'
 import type { SidebarTab } from '../ui/sidebar/tab-bar'
-import { useHostPanels } from '../ui/sidebar/use-plugin-panels'
+import { PLUGINS_MANAGER_PANEL_ID, useHostPanels } from '../ui/sidebar/use-plugin-panels'
 import { CaptureCameraRig } from './capture-camera-rig'
 import { CustomCameraControls } from './custom-camera-controls'
 import { DeleteConfirmationDialog } from './delete-confirmation-dialog'
@@ -169,7 +171,6 @@ const PAINT_CURSOR_BADGE_DISABLED_COLOR = '#94a3b8'
 const ERASE_CURSOR_BADGE_COLOR = '#e4e4e7'
 const PAINT_CURSOR_BADGE_OFFSET_X = 14
 const PAINT_CURSOR_BADGE_OFFSET_Y = 14
-const SCENE_READY_FALLBACK_MS = 8000
 const PRESENTATION_PROJECT_NOT_RESTORED = Symbol('presentation-project-not-restored')
 const useClientLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
 // `aim`: a region sub-mode off what it draws on — the HUD says where to go; no
@@ -236,6 +237,20 @@ export interface EditorProps {
   // UI slots (v2)
   navbarSlot?: ReactNode
   sidebarTabs?: (SidebarTab & { component: React.ComponentType })[]
+  /**
+   * The tab (one of `sidebarTabs`) shown on desktop in the column beside the
+   * side menu whenever no tool panel is open: a tool panel takes its place
+   * there, and closing the tool brings it back.
+   */
+  columnTabId?: string
+  /** Listed after the side menu's entries (v2 desktop), e.g. recent chats. */
+  sideMenuFooter?: ReactNode
+  /**
+   * The v2 side menu heading the one Plugins entry joins, e.g. the host's
+   * "Project". The project's plugins open from that entry instead of each
+   * having its own. Defaults to a Plugins heading of its own.
+   */
+  pluginsMenuSection?: string
   viewerToolbarLeft?: ReactNode
   viewerToolbarRight?: ReactNode
   /**
@@ -980,7 +995,7 @@ const ViewerSceneContent = memo(function ViewerSceneContent({
       {!(isLoading || noEditing) && <ToolManager />}
       {isFirstPersonMode && <FirstPersonControls />}
       {isCaptureMode && !isXRMode && <CaptureCameraRig />}
-      {!isXRMode && <CustomCameraControls />}
+      {!isXRMode && <CustomCameraControls sceneReady={!isLoading} />}
       {!isXRMode && <FollowPascal />}
       {!isXRMode && <ThumbnailGenerator onThumbnailCapture={onThumbnailCapture} />}
       {!isXRMode && <VectorEdgeExtractor />}
@@ -1174,6 +1189,26 @@ function PaintCursorLayer({
   )
 }
 
+// The loader's fallback can take it down while the scene data is still
+// loading; until then the scene is read-only, so say why edits are refused.
+function SceneDataPendingNotice() {
+  const i18n = usePascalI18n()
+  return (
+    <div className="pointer-events-none absolute inset-x-0 top-3 z-40 flex justify-center">
+      <div
+        className="flex items-center gap-2 rounded-full border border-border bg-background/90 px-3 py-1.5 text-muted-foreground text-xs shadow-sm backdrop-blur-md"
+        role="status"
+      >
+        <span className="size-1.5 animate-pulse rounded-full bg-amber-500" />
+        {i18n._({
+          id: 'editor.sceneData.pending',
+          message: 'Still loading the project. Editing is paused until it finishes.',
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ── Viewer canvas: memoized, subscribes to the view layout internally ──
 // This prevents Editor from re-rendering when the layout changes.
 
@@ -1191,6 +1226,7 @@ const ViewerCanvas = memo(function ViewerCanvas({
   onThumbnailCapture,
   onViewerBreadcrumb,
   presentationsReady,
+  sceneDataPending,
   viewerSceneSlot,
   floorplanSceneSlot,
   disablePostFx = false,
@@ -1210,6 +1246,7 @@ const ViewerCanvas = memo(function ViewerCanvas({
   onThumbnailCapture?: (blob: Blob, cameraData: SnapshotCameraData) => void
   onViewerBreadcrumb?: ViewerBreadcrumbHandler
   presentationsReady: boolean
+  sceneDataPending: boolean
   viewerSceneSlot?: ReactNode
   floorplanSceneSlot?: ReactNode
   disablePostFx?: boolean
@@ -1308,6 +1345,7 @@ const ViewerCanvas = memo(function ViewerCanvas({
       {/* `relative` so the floorplan compass (portaled here to stay visible in
           every layout) can anchor to this container's bottom-left. */}
       <div className="relative h-full" ref={setViewerAreaNode}>
+        {sceneDataPending ? <SceneDataPendingNotice /> : null}
         <QuickMeasurementHud />
         <DeleteConfirmationDialog />
         <div
@@ -1518,6 +1556,9 @@ function EditorContent({
   sidebarTop,
   navbarSlot,
   sidebarTabs,
+  columnTabId,
+  sideMenuFooter,
+  pluginsMenuSection,
   viewerToolbarLeft,
   viewerToolbarRight,
   stageOverlay,
@@ -1550,6 +1591,7 @@ function EditorContent({
   extraSidebarPanels,
   commandPaletteEmptyAction,
 }: EditorProps) {
+  const i18n = usePascalI18n()
   const isMobile = useIsMobile()
   // A top-docked menu sits at the top of the scene panes on desktop (layout v2).
   const dockMenuOnTop = actionMenuPlacement === 'top' && !isMobile
@@ -1599,12 +1641,16 @@ function EditorContent({
 
   const [isSceneLoading, setIsSceneLoading] = useState(false)
   const [hasLoadedInitialScene, setHasLoadedInitialScene] = useState(false)
+  // The `onLoad` the store's graph came from: a new one is pending from the
+  // render that receives it, before the load effect resets the flags above.
+  const [loadedFrom, setLoadedFrom] = useState<{ onLoad: typeof onLoad } | null>(null)
   // A failed `onLoad` is shown as an error with a retry, never as an empty
   // scene: an editor that renders the default scaffold after a failed load
   // autosaves that scaffold over the real project.
   const [sceneLoadError, setSceneLoadError] = useState<unknown>(null)
   const [sceneLoadAttempt, setSceneLoadAttempt] = useState(0)
   const [sceneReadyKey, setSceneReadyKey] = useState(0)
+  const [sceneLoadGeneration, setSceneLoadGeneration] = useState(0)
   const [isViewerSceneReady, setIsViewerSceneReady] = useState(false)
   const [previewStageMode, setPreviewStageMode] = useState<ViewerStageMode>('3d')
   const isPreviewMode = useEditor((s) => s.isPreviewMode)
@@ -1636,6 +1682,29 @@ function EditorContent({
     void useSidebarStore.persist.rehydrate()
   }, [])
 
+  // A project opens on the column's tab (the chat) as it starts loading: once the saved layout
+  // is restored (the effect above), once per project, and not again when preview hands the
+  // layout back.
+  const openedOnColumnRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (layoutVersion !== 'v2' || !columnTabId) return
+    const project = projectId ?? ''
+    if (openedOnColumnRef.current === project) return
+    // A project opened on a phone has had its opening: widening the window later keeps the tab
+    // and tool in use.
+    if (isMobile) {
+      openedOnColumnRef.current = project
+      return
+    }
+    const open = () => {
+      openedOnColumnRef.current = project
+      useEditor.getState().setActiveSidebarPanel(columnTabId)
+    }
+    // The restore may still be running; switching before it ends would be overwritten by it.
+    if (useEditor.persist.hasHydrated()) open()
+    else return useEditor.persist.onFinishHydration(open)
+  }, [projectId, layoutVersion, columnTabId, isMobile])
+
   useEffect(() => {
     useViewer.getState().setProjectId(projectId ?? null)
     useFloorplanMode.getState().setProjectId(projectId ?? null)
@@ -1657,6 +1726,7 @@ function EditorContent({
 
     async function load(attempt: number) {
       beginSceneLoad()
+      setSceneLoadGeneration((generation) => generation + 1)
       setSceneLoadError(null)
       setHasLoadedInitialScene(false)
       setIsViewerSceneReady(false)
@@ -1675,6 +1745,9 @@ function EditorContent({
           // The store holds the loaded graph: autosave resumes now, not on a
           // frame — a tab loaded while hidden never gets one.
           completeSceneLoad()
+          setLoadedFrom({ onLoad })
+          // A new project gets its own opening camera frame.
+          useEditor.getState().setOpeningCameraSettled(false)
           setIsViewerSceneReady(false)
           setSceneReadyKey((key) => key + 1)
         }
@@ -1741,36 +1814,33 @@ function EditorContent({
     setIsViewerSceneReady(ready)
   }, [])
 
-  useEffect(() => {
-    if (isLoading || isSceneLoading || !hasLoadedInitialScene || isViewerSceneReady) return
-
-    const timer = window.setTimeout(() => {
-      console.warn('[editor] viewer scene readiness timed out; showing editor shell anyway', {
-        sceneReadyKey,
-      })
-      setIsViewerSceneReady(true)
-    }, SCENE_READY_FALLBACK_MS)
-
-    return () => window.clearTimeout(timer)
-  }, [hasLoadedInitialScene, isLoading, isSceneLoading, isViewerSceneReady, sceneReadyKey])
+  const isEditorSceneLoading =
+    isSceneLoading || !hasLoadedInitialScene || loadedFrom === null || loadedFrom.onLoad !== onLoad
+  const isSceneDataLoading = isLoading || isEditorSceneLoading
+  const { showLoader, sceneData } = useSceneLoader({
+    isHostLoading: isLoading,
+    isSceneDataLoading: isEditorSceneLoading,
+    isViewerSceneReady,
+    hasLoadError: sceneLoadError != null,
+    loadKey: `${sceneLoadGeneration}:${sceneReadyKey}`,
+  })
 
   // The useAutoFrame emit can be clobbered by the level-follow effect's
   // first-run pivot rest on fast (client-side navigation) loads. Re-emitting
   // here is the last word after every load-driven camera effect has run.
   // Once per load: a remounted viewer reports ready again, but only a new
   // load reframes; remounted controls rest their own pivot on the level.
+  // A readiness fallback that took the loader down counts as ready here.
   const framedSceneReadyKeyRef = useRef<number | null>(null)
   useEffect(() => {
-    if (!isViewerSceneReady || framedSceneReadyKeyRef.current === sceneReadyKey) return
+    if (showLoader || framedSceneReadyKeyRef.current === sceneReadyKey) return
     framedSceneReadyKeyRef.current = sceneReadyKey
     const nodes = useScene.getState().nodes
     if (Object.keys(nodes).length === 0) return
     const bounds = computeSceneBoundsXZ(nodes)
     emitter.emit('camera-controls:fit-scene', bounds ? { bounds } : {})
-  }, [isViewerSceneReady, sceneReadyKey])
+  }, [showLoader, sceneReadyKey])
 
-  const isSceneDataLoading = isLoading || isSceneLoading || !hasLoadedInitialScene
-  const showLoader = isSceneDataLoading || !isViewerSceneReady
   const visibleLoader =
     showLoader &&
     !(
@@ -1881,6 +1951,7 @@ function EditorContent({
       onThumbnailCapture={onThumbnailCapture}
       onViewerBreadcrumb={onViewerBreadcrumb}
       presentationsReady={presentationsReady}
+      sceneDataPending={!showLoader && sceneData === 'loading'}
       sceneReadyKey={sceneReadyKey}
       showLoader={showLoader}
       viewerSceneSlot={viewerSceneSlot}
@@ -1902,7 +1973,20 @@ function EditorContent({
       }
     }
 
+    // The project's plugins fold into the one Plugins entry, whose panel lists them.
+    const hasPluginsEntry = hostRailPanels.some((p) => p.id === PLUGINS_MANAGER_PANEL_ID)
+    const pluginsHeading = i18n._({ id: 'editor.sidebar.sideMenu.plugins', message: 'Plugins' })
+    // A plugin that names a section of its own keeps its own entry there.
+    const isListedPlugin = (p: (typeof hostRailPanels)[number]) =>
+      hasPluginsEntry && p.pluginId !== undefined && p.section === pluginsHeading
+    const listedPlugins = hostRailPanels
+      .filter(isListedPlugin)
+      .map((p) => ({ id: p.id, label: p.label, icon: p.icon }))
+
     const renderTabContent = (tabId: string) => {
+      if (tabId === PLUGINS_MANAGER_PANEL_ID) {
+        return <PluginsMenuPanel plugins={listedPlugins} />
+      }
       // Built-in panels
       if (tabId === 'site') {
         return <SitePanel {...sitePanelProps} />
@@ -1918,27 +2002,45 @@ function EditorContent({
     }
 
     const tabBarTabs = [
-      ...(sidebarTabs?.map(({ id, label, mobileDefaultSnap, mobileIcon, icon, noPanel }) => ({
-        id,
-        label,
-        mobileDefaultSnap,
-        mobileIcon,
-        icon,
-        noPanel,
-      })) ?? []),
+      ...(sidebarTabs?.map(
+        ({ id, label, mobileDefaultSnap, mobileIcon, icon, noPanel, section }) => ({
+          id,
+          label,
+          mobileDefaultSnap,
+          mobileIcon,
+          icon,
+          noPanel,
+          section,
+        }),
+      ) ?? []),
       // Host panels appear after the explicit tabs in the rail. The icon
       // doubles as the mobile icon; a half-height sheet is a sensible default.
-      ...hostRailPanels.map((p) => ({
-        id: p.id,
-        label: p.label,
-        mobileDefaultSnap: 0.5,
-        mobileIcon: p.icon,
-        icon: p.icon,
-        noPanel: p.noPanel,
-        onSelect: p.onSelect,
-        stageActive: p.stageActive,
-        onDeselect: p.onDeselect,
-      })),
+      // Plugins is one entry: a panel listing the project's plugins and the
+      // directory, so the menu keeps its room for the host's footer.
+      ...hostRailPanels.map((p) =>
+        p.id === PLUGINS_MANAGER_PANEL_ID
+          ? {
+              id: p.id,
+              label: p.label,
+              section: pluginsMenuSection ?? p.section,
+              mobileDefaultSnap: 0.5,
+              mobileIcon: p.icon,
+              icon: p.icon,
+            }
+          : {
+              id: p.id,
+              label: p.label,
+              section: p.section,
+              menuParent: isListedPlugin(p) ? PLUGINS_MANAGER_PANEL_ID : undefined,
+              mobileDefaultSnap: 0.5,
+              mobileIcon: p.icon,
+              icon: p.icon,
+              noPanel: p.noPanel,
+              onSelect: p.onSelect,
+              stageActive: p.stageActive,
+              onDeselect: p.onDeselect,
+            },
+      ),
     ]
 
     return (
@@ -2007,6 +2109,8 @@ function EditorContent({
               }
               renderTabContent={renderTabContent}
               sidebarOverlay={sidebarOverlay}
+              columnTabId={columnTabId}
+              sideMenuFooter={sideMenuFooter}
               sidebarTabs={tabBarTabs}
               stageOverlay={stageOverlay}
               viewBar={viewBar}
