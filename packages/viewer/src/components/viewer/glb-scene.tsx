@@ -258,6 +258,7 @@ export function GlbScene({
    *  parent and siblings. A stable reference. */
   sceneNodes?: Readonly<Record<string, AnyNode>>
 }) {
+  const i18n = usePascalI18n()
   const gltf = useGLTFKTX2(url) as unknown as {
     scene: THREE.Group
     animations: THREE.AnimationClip[]
@@ -1002,8 +1003,10 @@ export function GlbScene({
           ? part.kind === 'spin'
           : (clips?.every((clip) => clip.endsWith(': loop')) ?? false)
         const label = lightOnly
-          ? (extras.label ?? 'Lights')
-          : (part?.partId.replaceAll('_', ' ') ?? extras.label ?? 'Item')
+          ? (extras.label ?? i18n._({ id: 'viewer.glbScene.lights', message: 'Lights' }))
+          : (part?.partId.replaceAll('_', ' ') ??
+            extras.label ??
+            i18n._({ id: 'viewer.glbScene.item', message: 'Item' }))
         door = {
           label,
           isOpen,
@@ -1018,12 +1021,19 @@ export function GlbScene({
       } else if (node && extras?.openable && extras.clips?.length) {
         doorNode = { hit: hit.object, node }
         doorId = extras.pascalId as string
-        door = { label: extras.label ?? 'Door', isOpen: openIds.current.has(doorId) }
+        door = {
+          label: extras.label ?? i18n._({ id: 'viewer.glbScene.door', message: 'Door' }),
+          isOpen: openIds.current.has(doorId),
+        }
       } else if (node && extras?.pascalId && loopMechanisms.has(extras.pascalId)) {
         doorNode = { hit: hit.object, node }
         doorId = extras.pascalId
         const isOpen = Boolean(useInteractive.getState().mechanisms[doorId as AnyNodeId])
-        door = { label: extras.label ?? 'Item', isOpen, verb: isOpen ? 'turn off' : 'turn on' }
+        door = {
+          label: extras.label ?? i18n._({ id: 'viewer.glbScene.item', message: 'Item' }),
+          isOpen,
+          verb: isOpen ? 'turn off' : 'turn on',
+        }
       }
     }
     if (hit && !doorNode) {

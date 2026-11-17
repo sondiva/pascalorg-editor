@@ -672,6 +672,7 @@ export const CATALOG_ITEMS: CatalogItem[] = [
         { kind: 'toggle' },
         {
           kind: 'slider',
+          // i18n-ignore: control label in item-definition data; the field is core's Interactive schema (z.string, serialized in scene data) and also carries dynamic clip-name labels elsewhere, so it cannot become a descriptor
           label: 'Intensity',
           min: 0,
           max: 100,
@@ -764,6 +765,7 @@ export const CATALOG_ITEMS: CatalogItem[] = [
         { kind: 'toggle' },
         {
           kind: 'slider',
+          // i18n-ignore: control label in item-definition data; the field is core's Interactive schema (z.string, serialized in scene data) and also carries dynamic clip-name labels elsewhere, so it cannot become a descriptor
           label: 'Intensity',
           min: 0,
           max: 100,
@@ -1044,6 +1046,7 @@ export const CATALOG_ITEMS: CatalogItem[] = [
         { kind: 'toggle' },
         {
           kind: 'slider',
+          // i18n-ignore: control label in item-definition data; the field is core's Interactive schema (z.string, serialized in scene data) and also carries dynamic clip-name labels elsewhere, so it cannot become a descriptor
           label: 'Intensity',
           min: 0,
           max: 100,

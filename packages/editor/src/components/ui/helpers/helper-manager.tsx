@@ -4,6 +4,7 @@ import {
   type AnyNode,
   type AnyNodeId,
   floorPlacedCollides,
+  type MessageDescriptor,
   nodeRegistry,
   type TerrainVerb,
   useScene, usePascalI18n,
@@ -154,7 +155,7 @@ export function paintHints(mode: PaintMode): ContextualShortcutHint[] {
 
 export function paintRegionHints(
   mode: 'rectangle' | 'polygon',
-  notice: string | null,
+  notice: MessageDescriptor | string | null,
   hovering = true,
 ): ContextualShortcutHint[] {
   const gesture: Record<typeof mode, ContextualShortcutHint> = {

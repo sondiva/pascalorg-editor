@@ -1,5 +1,6 @@
 'use client'
 
+import { usePascalI18n } from '@pascal-app/core'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { usePerfActionReceipts } from '../../lib/perf-actions'
@@ -71,34 +72,65 @@ const OLDER_ACTION_LINES = 2
  * started another one, or it blew the settle budget).
  */
 const LastAction = () => {
+  const i18n = usePascalI18n()
   const [latest, ...older] = usePerfActionReceipts()
   if (!latest) return null
   return (
     <div style={section}>
-      <div style={{ ...label, opacity: 0.7 }}>last action</div>
+      <div style={{ ...label, opacity: 0.7 }}>
+        {i18n._({ id: 'viewer.perfPanel.lastAction', message: 'last action' })}
+      </div>
       <div style={grid}>
         <span style={{ ...value, textAlign: 'left', ...clip }}>
           {latest.detail ? `${latest.name} ${latest.detail}` : latest.name}
         </span>
         <span style={{ ...value, color: latest.outcome === 'settled' ? '#e7e9f0' : '#fbbf24' }}>
           {latest.outcome === 'settled'
-            ? `${latest.totalMs.toFixed(0)}ms`
-            : `${latest.totalMs.toFixed(0)}ms ${latest.outcome}`}
+            ? i18n._({
+                id: 'viewer.perfPanel.totalMs',
+                message: '{total}ms',
+                values: { total: latest.totalMs.toFixed(0) },
+              })
+            : i18n._({
+                id: 'viewer.perfPanel.totalMsOutcome',
+                message: '{total}ms {outcome}',
+                values: { total: latest.totalMs.toFixed(0), outcome: latest.outcome },
+              })}
         </span>
       </div>
       <div style={{ ...label, ...clip }}>
-        {`drag ${latest.dragMs.toFixed(0)} / settle ${latest.settleMs.toFixed(0)} (${latest.settleFrames} frames)`}
+        {i18n._({
+          id: 'viewer.perfPanel.dragSettle',
+          message: 'drag {drag} / settle {settle} ({frames} frames)',
+          values: {
+            drag: latest.dragMs.toFixed(0),
+            settle: latest.settleMs.toFixed(0),
+            frames: latest.settleFrames,
+          },
+        })}
       </div>
       {latest.tracks.slice(0, ACTION_TRACK_LINES).map((track) => (
         <div key={track.name} style={grid}>
           <span style={label}>{track.name}</span>
-          <span style={value}>{`${track.totalMs.toFixed(1)}ms (${track.count}×)`}</span>
+          <span style={value}>
+            {i18n._({
+              id: 'viewer.perfPanel.trackTotal',
+              message: '{total}ms ({count}×)',
+              values: { total: track.totalMs.toFixed(1), count: track.count },
+            })}
+          </span>
         </div>
       ))}
       {older.slice(0, OLDER_ACTION_LINES).map((receipt) => (
         <div key={receipt.endedAt} style={{ ...grid, opacity: 0.55 }}>
           <span style={{ ...label, ...clip }}>{receipt.name}</span>
-          <span style={value}>{`${receipt.totalMs.toFixed(0)}ms`}</span>
+          <span style={value}>
+            {i18n._({
+              id: 'viewer.perfPanel.totalMs',
+              message: '{total}ms',
+              values: { total: receipt.totalMs.toFixed(0) },
+            })}
+          </span>
         </div>
       ))}
     </div>
@@ -106,6 +138,7 @@ const LastAction = () => {
 }
 
 export const PerfPanel = () => {
+  const i18n = usePascalI18n()
   const stats = usePerfStats()
   const [placement, setPlacement] = useState<PanelPlacement>(loadPlacement)
   const dragRef = useRef<{ pointerId: number; dx: number; dy: number } | null>(null)
@@ -178,7 +211,13 @@ export const PerfPanel = () => {
         }}
         type="button"
       >
-        {stats ? `${stats.fps} fps` : 'perf'}
+        {stats
+          ? i18n._({
+              id: 'viewer.perfPanel.fpsFps',
+              message: '{fps} fps',
+              values: { fps: stats.fps },
+            })
+          : i18n._({ id: 'viewer.perfPanel.perf', message: 'perf' })}
       </button>,
       document.body,
     )
@@ -221,12 +260,23 @@ export const PerfPanel = () => {
           touchAction: 'none',
         }}
       >
-        <span style={{ fontWeight: 600, letterSpacing: 0.2 }}>Performance</span>
+        <span style={{ fontWeight: 600, letterSpacing: 0.2 }}>
+          {i18n._({ id: 'viewer.perfPanel.performance', message: 'Performance' })}
+        </span>
         <span style={{ marginLeft: 'auto', color: stats ? fpsColor(stats.fps) : '#8b90a0' }}>
-          {stats ? `${stats.fps} fps` : '—'}
+          {stats
+            ? i18n._({
+                id: 'viewer.perfPanel.fpsFps',
+                message: '{fps} fps',
+                values: { fps: stats.fps },
+              })
+            : '—'}
         </span>
         <button
-          aria-label="Dock panel to the side"
+          aria-label={i18n._({
+            id: 'viewer.perfPanel.dockPanelToTheSide',
+            message: 'Dock panel to the side',
+          })}
           onClick={dock}
           onPointerDown={(e) => e.stopPropagation()}
           style={{
@@ -251,33 +301,71 @@ export const PerfPanel = () => {
           <div style={grid}>
             <Row name="frame">
               {stats.frameMs > 0
-                ? `${stats.frameMs.toFixed(1)}ms cpu (max ${stats.frameMaxMs.toFixed(1)})`
+                ? i18n._({
+                    id: 'viewer.perfPanel.frameCpu',
+                    message: '{frame}ms cpu (max {max})',
+                    values: { frame: stats.frameMs.toFixed(1), max: stats.frameMaxMs.toFixed(1) },
+                  })
                 : '—'}
             </Row>
             <Row name="encode">
               {stats.encodeMs > 0
-                ? `${stats.encodeMs.toFixed(1)}ms (max ${stats.encodeMaxMs.toFixed(1)})`
+                ? i18n._({
+                    id: 'viewer.perfPanel.encodeMax',
+                    message: '{encode}ms (max {max})',
+                    values: {
+                      encode: stats.encodeMs.toFixed(1),
+                      max: stats.encodeMaxMs.toFixed(1),
+                    },
+                  })
                 : '—'}
             </Row>
             <Row name="gpu">
               {stats.gpuTracked
-                ? `${stats.gpuMs.toFixed(1)}ms (max ${stats.gpuMaxMs.toFixed(1)})`
-                : 'no timestamp-query'}
+                ? i18n._({
+                    id: 'viewer.perfPanel.gpuMax',
+                    message: '{gpu}ms (max {max})',
+                    values: { gpu: stats.gpuMs.toFixed(1), max: stats.gpuMaxMs.toFixed(1) },
+                  })
+                : i18n._({
+                    id: 'viewer.perfPanel.noTimestampQuery',
+                    message: 'no timestamp-query',
+                  })}
             </Row>
             <Row name="queue">
               {stats.queueMs > 0
-                ? `${stats.queueMs.toFixed(1)}ms (max ${stats.queueMaxMs.toFixed(1)})`
+                ? i18n._({
+                    id: 'viewer.perfPanel.queueMax',
+                    message: '{queue}ms (max {max})',
+                    values: { queue: stats.queueMs.toFixed(1), max: stats.queueMaxMs.toFixed(1) },
+                  })
                 : '—'}
             </Row>
             <Row name="draw">{stats.drawCalls}</Row>
             {stats.batch.containers > 0 && (
               <Row name="batch">
-                {`${stats.batch.items} items · ${stats.batch.instances} inst · ${stats.batch.containers} mesh`}
+                {i18n._({
+                  id: 'viewer.perfPanel.itemsItemsInstancesInstContainersMesh',
+                  message: '{items} items · {instances} inst · {containers} mesh',
+                  values: {
+                    items: stats.batch.items,
+                    instances: stats.batch.instances,
+                    containers: stats.batch.containers,
+                  },
+                })}
               </Row>
             )}
             <Row name="tri">{`${(stats.triangles / 1000).toFixed(1)}k`}</Row>
             <Row name="mem">
-              {`${stats.geometries} geo  ${stats.textures} tex  ${mb(stats.gpuBytes)}`}
+              {i18n._({
+                id: 'viewer.perfPanel.memory',
+                message: '{geometries} geo  {textures} tex  {memory}',
+                values: {
+                  geometries: stats.geometries,
+                  textures: stats.textures,
+                  memory: mb(stats.gpuBytes),
+                },
+              })}
             </Row>
             <Row name="heap">{stats.heapBytes > 0 ? mb(stats.heapBytes) : '—'}</Row>
             <Row name="dirty">
@@ -285,7 +373,11 @@ export const PerfPanel = () => {
               {stats.dirtyDetail ? ` (${stats.dirtyDetail})` : ''}
             </Row>
             <Row name="visible">
-              {`${stats.meshes} mesh  ${stats.lines} line  ${stats.lights} light`}
+              {i18n._({
+                id: 'viewer.perfPanel.meshesMeshLinesLineLightsLight',
+                message: '{meshes} mesh  {lines} line  {lights} light',
+                values: { meshes: stats.meshes, lines: stats.lines, lights: stats.lights },
+              })}
             </Row>
           </div>
           <LastAction />
@@ -295,7 +387,15 @@ export const PerfPanel = () => {
                 <div key={t.name} style={grid}>
                   <span style={label}>{t.name}</span>
                   <span style={value}>
-                    {`${t.totalMs.toFixed(1)}ms (${t.count}×, max ${t.maxMs.toFixed(1)})`}
+                    {i18n._({
+                      id: 'viewer.perfPanel.trackTotalMax',
+                      message: '{total}ms ({count}×, max {max})',
+                      values: {
+                        total: t.totalMs.toFixed(1),
+                        count: t.count,
+                        max: t.maxMs.toFixed(1),
+                      },
+                    })}
                   </span>
                 </div>
               ))}
@@ -303,7 +403,9 @@ export const PerfPanel = () => {
           )}
         </div>
       ) : (
-        <div style={{ padding: '8px 10px', color: '#8b90a0' }}>waiting for samples…</div>
+        <div style={{ padding: '8px 10px', color: '#8b90a0' }}>
+          {i18n._({ id: 'viewer.perfPanel.waitingForSamples', message: 'waiting for samples…' })}
+        </div>
       )}
     </div>,
     document.body,

@@ -1,3 +1,4 @@
+import type { MessageDescriptor } from '@pascal-app/core'
 import { isTypingTarget } from '@pascal-app/viewer'
 import { create } from 'zustand'
 import type { ActivePaintMaterial } from './material-paint'
@@ -25,8 +26,8 @@ export const usePaintRegionMode = create<{
   picked: ActivePaintMaterial | null
   setMode: (mode: PaintMode) => void
   /** Short text the HUD shows for a refused gesture (e.g. the per-face cap). */
-  notice: string | null
-  setNotice: (notice: string | null) => void
+  notice: MessageDescriptor | string | null
+  setNotice: (notice: MessageDescriptor | string | null) => void
 }>((set) => ({
   mode: 'surface',
   drawMode: 'surface',

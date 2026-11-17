@@ -1,4 +1,4 @@
-import { type AnyNodeId, useScene, type WallFace } from '@pascal-app/core'
+import { type AnyNodeId, type MessageDescriptor, useScene, type WallFace } from '@pascal-app/core'
 import { create } from 'zustand'
 import useEditor from '../store/use-editor'
 import { beginGesture, type GestureHandle } from './gesture-lifecycle'
@@ -29,7 +29,10 @@ import {
 // `WallRegionHit` and renders `preview`.
 
 export const WALL_PAINT_REGION_HANDLE = 'paint-region'
-export const PICK_MATERIAL_MESSAGE = 'Pick a material first'
+export const PICK_MATERIAL_MESSAGE: MessageDescriptor = /* i18n */ {
+  id: 'editor.lib.floorRegionSession.pickAMaterialFirst',
+  message: 'Pick a material first',
+}
 
 /** The pointer on one wall face. `u` / `v` are raw (unsnapped) face coordinates. */
 export type WallRegionHit = {

@@ -1,5 +1,6 @@
 'use client'
 
+import { usePascalI18n } from '@pascal-app/core'
 import type { SceneGraph } from '@pascal-app/editor'
 import { Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -17,6 +18,7 @@ const EMPTY_GRAPH: SceneGraph = {
  * that still exists.
  */
 export function CreateProjectButton({ nextNumber }: { nextNumber: number }) {
+  const i18n = usePascalI18n()
   const router = useRouter()
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -31,24 +33,39 @@ export function CreateProjectButton({ nextNumber }: { nextNumber: number }) {
         body: JSON.stringify({ name: `Project #${nextNumber}`, graph: EMPTY_GRAPH }),
       })
       if (!response.ok) {
-        setError(`Failed to create project (${response.status})`)
+        setError(
+          i18n._({
+            id: 'app.createProjectButton.failedToCreateProjectStatus',
+            message: 'Failed to create project ({status})',
+            values: { status: response.status },
+          }),
+        )
         return
       }
       const meta = (await response.json()) as { id: string }
       router.push(`/project/${meta.id}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create project')
+      setError(
+        err instanceof Error
+          ? err.message
+          : i18n._({
+              id: 'app.createProjectButton.failedToCreateProject',
+              message: 'Failed to create project',
+            }),
+      )
     } finally {
       setIsCreating(false)
     }
-  }, [router, nextNumber])
+  }, [router, nextNumber, i18n])
 
   return (
     <div className="flex items-center gap-3">
       {error && <span className="text-destructive text-xs">{error}</span>}
       <button className={PRIMARY_PILL} disabled={isCreating} onClick={handleCreate} type="button">
         <Plus className="h-4 w-4" />
-        {isCreating ? 'Creating…' : 'New project'}
+        {isCreating
+          ? i18n._({ id: 'app.createProjectButton.creating', message: 'Creating…' })
+          : i18n._({ id: 'app.createProjectButton.newProject', message: 'New project' })}
       </button>
     </div>
   )

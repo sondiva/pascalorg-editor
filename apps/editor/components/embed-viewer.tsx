@@ -1,6 +1,6 @@
 'use client'
 
-import { initSpatialGridSync, useScene } from '@pascal-app/core'
+import { initSpatialGridSync, usePascalI18n, useScene } from '@pascal-app/core'
 import {
   applySceneGraphToEditor,
   FirstPersonControls,
@@ -44,6 +44,7 @@ const SWITCHER_POSITION =
  * mode without the back button, or the bare 3D view when `chrome` is off.
  */
 export function EmbedViewer({ id, name, graph, chrome = true }: EmbedViewerProps) {
+  const i18n = usePascalI18n()
   const [loaded, setLoaded] = useState(false)
   const [sceneReady, setSceneReady] = useState(false)
   const [mode, setMode] = useState<ViewerStageMode>('3d')
@@ -143,7 +144,7 @@ export function EmbedViewer({ id, name, graph, chrome = true }: EmbedViewerProps
             src="/pascal-logo-shape.svg"
             width={14}
           />
-          Made with Pascal
+          {i18n._({ id: 'app.embedViewer.madeWithPascal', message: 'Made with Pascal' })}
         </a>
       )}
     </div>
@@ -224,7 +225,10 @@ function requestWalkthroughPointerLock() {
   }
 }
 
-class ViewerErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+class ViewerErrorBoundaryClass extends Component<
+  { children: ReactNode; message: string },
+  { failed: boolean }
+> {
   state = { failed: false }
 
   static getDerivedStateFromError() {
@@ -235,11 +239,23 @@ class ViewerErrorBoundary extends Component<{ children: ReactNode }, { failed: b
     if (!this.state.failed) return this.props.children
     return (
       <div className="flex h-full w-full items-center justify-center p-6 text-center">
-        <p className="max-w-sm text-neutral-600 text-sm">
-          This project could not be shown in 3D here. Try a browser with hardware acceleration
-          turned on.
-        </p>
+        <p className="max-w-sm text-neutral-600 text-sm">{this.props.message}</p>
       </div>
     )
   }
+}
+
+function ViewerErrorBoundary({ children }: { children: ReactNode }) {
+  const i18n = usePascalI18n()
+  return (
+    <ViewerErrorBoundaryClass
+      message={i18n._({
+        id: 'app.embedViewer.webglFailed',
+        message:
+          'This project could not be shown in 3D here. Try a browser with hardware acceleration turned on.',
+      })}
+    >
+      {children}
+    </ViewerErrorBoundaryClass>
+  )
 }

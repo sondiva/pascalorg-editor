@@ -1,10 +1,13 @@
+import { createI18n } from '@pascal-app/core'
 import type { SceneGraph } from '@pascal-app/editor'
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
 import { EmbedViewer } from '@/components/embed-viewer'
 import { isSceneShared } from '@/lib/scene-sharing'
 import { getSceneOperations } from '@/lib/scene-store-server'
+import { PASCAL_LOCALE_HEADER, resolveUiLocale } from '@/lib/ui-locale'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,8 +27,15 @@ const loadSharedScene = cache(async (id: string): Promise<SharedScene | null> =>
 export async function generateMetadata({ params }: PageProps<'/embed/[id]'>): Promise<Metadata> {
   const { id } = await params
   const scene = await loadSharedScene(id)
+  const i18n = createI18n({ locale: resolveUiLocale((await headers()).get(PASCAL_LOCALE_HEADER)) })
   return {
-    title: scene ? `${scene.name} · Pascal` : 'Pascal',
+    title: scene
+      ? i18n._({
+          id: 'app.embed.pageTitle',
+          message: '{name} · Pascal',
+          values: { name: scene.name },
+        })
+      : 'Pascal',
     robots: { index: false },
   }
 }

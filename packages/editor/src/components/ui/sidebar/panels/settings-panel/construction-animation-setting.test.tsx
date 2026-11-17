@@ -77,7 +77,7 @@ describe('the levels the control offers', () => {
     const framingOption = constructionLevelOptions(false).find((o) => o.value === 'framing')!
     expect(framingOption.disabled).toBe(true)
     expect(framingOption.title).toBe(FRAMING_NEEDS_ARCHITECT)
-    expect(FRAMING_NEEDS_ARCHITECT).toBe('Framing needs the Architect plugin.')
+    expect(FRAMING_NEEDS_ARCHITECT.message).toBe('Framing needs the Architect plugin.')
     for (const option of constructionLevelOptions(false).filter((o) => o.value !== 'framing'))
       expect(option.disabled).toBe(false)
   })

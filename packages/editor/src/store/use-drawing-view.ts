@@ -1,16 +1,34 @@
 'use client'
 
-import type { ConstructionDrawingType } from '@pascal-app/core'
+import type { ConstructionDrawingType, MessageDescriptor } from '@pascal-app/core'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 export const DRAWING_TYPE_OPTIONS = [
-  { id: 'floor-plan', label: 'Floor plan' },
-  { id: 'foundation-plan', label: 'Foundation plan' },
-  { id: 'reflected-ceiling-plan', label: 'Reflected ceiling plan' },
-  { id: 'roof-plan', label: 'Roof plan' },
-  { id: 'site-plan', label: 'Site plan' },
-] as const satisfies readonly { id: ConstructionDrawingType; label: string }[]
+  {
+    id: 'floor-plan',
+    label: /* i18n */ { id: 'editor.store.drawingView.floorPlan', message: 'Floor plan' },
+  },
+  {
+    id: 'foundation-plan',
+    label: /* i18n */ { id: 'editor.store.drawingView.foundationPlan', message: 'Foundation plan' },
+  },
+  {
+    id: 'reflected-ceiling-plan',
+    label: /* i18n */ {
+      id: 'editor.store.drawingView.reflectedCeilingPlan',
+      message: 'Reflected ceiling plan',
+    },
+  },
+  {
+    id: 'roof-plan',
+    label: /* i18n */ { id: 'editor.store.drawingView.roofPlan', message: 'Roof plan' },
+  },
+  {
+    id: 'site-plan',
+    label: /* i18n */ { id: 'editor.store.drawingView.sitePlan', message: 'Site plan' },
+  },
+] as const satisfies readonly { id: ConstructionDrawingType; label: MessageDescriptor }[]
 
 export type DrawingAnnotationLayoutOverride = {
   dx: number
@@ -31,9 +49,15 @@ export type DrawingAnnotationLayoutOverrides = Record<string, DrawingAnnotationL
 export type EditorDrawingType = Extract<ConstructionDrawingType, 'floor-plan' | 'site-plan'>
 
 export const EDITOR_DRAWING_TYPE_OPTIONS = [
-  { id: 'floor-plan', label: 'Floor plan' },
-  { id: 'site-plan', label: 'Site plan' },
-] as const satisfies readonly { id: EditorDrawingType; label: string }[]
+  {
+    id: 'floor-plan',
+    label: /* i18n */ { id: 'editor.store.drawingView.floorPlan', message: 'Floor plan' },
+  },
+  {
+    id: 'site-plan',
+    label: /* i18n */ { id: 'editor.store.drawingView.sitePlan', message: 'Site plan' },
+  },
+] as const satisfies readonly { id: EditorDrawingType; label: MessageDescriptor }[]
 
 type DrawingViewState = {
   drawingType: EditorDrawingType

@@ -8,6 +8,7 @@ import {
   resolveCeilingHeight,
   roomFloorElevation,
   sceneRegistry,
+  usePascalI18n,
   useScene,
 } from '@pascal-app/core'
 import {
@@ -496,6 +497,7 @@ const noRaycast = () => {}
 
 /** What the draft shows: its outline, the clipped pieces, the label and its colour. */
 function useDraftView(draft: FloorRegionDraft | null) {
+  const i18n = usePascalI18n()
   const unit = useViewer((s) => s.unit)
   return useMemo(() => {
     if (!draft) return null
@@ -512,13 +514,20 @@ function useDraftView(draft: FloorRegionDraft | null) {
       closed: draft.kind === 'rectangle' || outline.length >= 3,
       clip,
       message,
-      label: message ?? (clip ? formatAreaLabel(clip.area, unit) : null),
+      label:
+        message != null
+          ? typeof message === 'string'
+            ? message
+            : i18n._(message)
+          : clip
+            ? formatAreaLabel(clip.area, unit)
+            : null,
       anchor: message && draft.kind === 'polygon' ? (draft.cursor ?? anchor) : anchor,
       points: draft.kind === 'polygon' ? draft.points : [],
       cursor: draft.kind === 'polygon' ? draft.cursor : draft.end,
       fill: draft.room.purpose?.fill ?? null,
     }
-  }, [draft, unit])
+  }, [draft, unit, i18n])
 }
 
 function FloorRegionPreview3D({ mode }: { mode: FloorRegionMode }) {

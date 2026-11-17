@@ -1,10 +1,21 @@
 'use client'
 
-import { usePascalI18n } from '@pascal-app/core'
+import { type MessageDescriptor, usePascalI18n } from '@pascal-app/core'
 import { type ReactNode, useMemo } from 'react'
 import type { WalkthroughInteract } from '../../store/use-first-person-hud'
 import { cn } from '../lib/cn'
 import { displayRoomName } from '../lib/room-name-messages'
+
+/** The prompt verb is a code the controller also matches on; the HUD translates it here. */
+const VERB_MESSAGES: Record<string, MessageDescriptor> = {
+  open: { id: 'viewer.walkthroughHud.verb.open', message: 'open' },
+  close: { id: 'viewer.walkthroughHud.verb.close', message: 'close' },
+  'turn on': { id: 'viewer.walkthroughHud.verb.turnOn', message: 'turn on' },
+  'turn off': { id: 'viewer.walkthroughHud.verb.turnOff', message: 'turn off' },
+  press: { id: 'viewer.walkthroughHud.verb.press', message: 'press' },
+  play: { id: 'viewer.walkthroughHud.verb.play', message: 'play' },
+  pause: { id: 'viewer.walkthroughHud.verb.pause', message: 'pause' },
+}
 
 /** A control shown in the HUD's key strip: its keys (as printed on the keycaps) and what they do. */
 export type WalkthroughHint = { keys: readonly string[]; action: string }
@@ -52,13 +63,15 @@ export function WalkthroughHud({
   onExit,
   children,
 }: WalkthroughHudProps) {
+  const i18n = usePascalI18n()
+  const verbMessage = interact ? VERB_MESSAGES[interact.verb] : undefined
   const kbdClass = 'rounded border border-border/60 bg-white/10 px-1.5 py-0.5 font-mono text-[10px]'
   const pillClass =
     'flex items-center gap-1.5 rounded-full border border-border/40 bg-background/70 px-3 py-1 text-muted-foreground text-xs backdrop-blur-xl'
   const exitContent = (
     <>
       <kbd className={kbdClass}>Esc</kbd>
-      to exit
+      {i18n._({ id: 'viewer.walkthroughHud.toExit', message: 'to exit' })}
     </>
   )
 
@@ -86,10 +99,12 @@ export function WalkthroughHud({
       <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-2">
         {suspended ? (
           <div className={pillClass}>
-            <span className="font-medium text-foreground">Click</span>
-            <span>or</span>
+            <span className="font-medium text-foreground">
+              {i18n._({ id: 'viewer.walkthroughHud.click', message: 'Click' })}
+            </span>
+            <span>{i18n._({ id: 'viewer.walkthroughHud.or', message: 'or' })}</span>
             <kbd className={kbdClass}>P</kbd>
-            <span>to resume</span>
+            <span>{i18n._({ id: 'viewer.walkthroughHud.toResume', message: 'to resume' })}</span>
             <span className="text-muted-foreground/60">·</span>
             {exitContent}
           </div>
@@ -113,7 +128,7 @@ export function WalkthroughHud({
             ) : null}
             <div className={pillClass}>
               <kbd className={kbdClass}>P</kbd>
-              free cursor
+              {i18n._({ id: 'viewer.walkthroughHud.freeCursor', message: 'free cursor' })}
             </div>
             {onExit ? (
               <button
@@ -136,9 +151,12 @@ export function WalkthroughHud({
             <kbd className="rounded border border-border/60 bg-white/10 px-1.5 py-0.5 font-mono text-[10px]">
               E
             </kbd>
-            <span className="text-muted-foreground">or click to</span>
+            <span className="text-muted-foreground">
+              {i18n._({ id: 'viewer.walkthroughHud.orClickTo', message: 'or click to' })}
+            </span>
             <span className="font-medium">
-              {interact.verb} {interact.label}
+              {verbMessage ? i18n._(verbMessage) : interact.verb}{' '}
+              {typeof interact.label === 'string' ? interact.label : i18n._(interact.label)}
             </span>
           </div>
         </div>

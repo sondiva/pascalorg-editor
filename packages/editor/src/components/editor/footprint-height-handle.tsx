@@ -8,6 +8,7 @@ import {
   type SlabNode,
   sceneRegistry,
   upperFloorHeightControl,
+  usePascalI18n,
   useScene,
 } from '@pascal-app/core'
 import { useViewer } from '@pascal-app/viewer'
@@ -28,6 +29,7 @@ import useInteractionScope from '../../store/use-interaction-scope'
 import { suppressBoxSelectForPointer } from '../tools/select/box-select-state'
 import { ElevationArrows, outlineCentroid, useHandleScale } from './room-handles'
 
+// i18n-ignore: drag handle id used as the drag scope, never shown as copy
 export const FOOTPRINT_HEIGHT_DRAG_LABEL = 'footprint-height'
 
 const PILL =
@@ -80,6 +82,7 @@ export function FootprintHeightHandle() {
 }
 
 function FootprintHeightArrows({ plate }: { plate: SlabNode }) {
+  const i18n = usePascalI18n()
   const { camera, raycaster, gl } = useThree()
   const zoom = useHandleScale()
   const unit = useViewer((s) => s.unit)
@@ -184,7 +187,12 @@ function FootprintHeightArrows({ plate }: { plate: SlabNode }) {
             {shown !== null && (
               <div className={PILL}>
                 <span className="font-medium text-foreground">
-                  {upper ? 'Floor top' : 'Foundation'}
+                  {upper
+                    ? i18n._({ id: 'editor.footprintHeightHandle.floorTop', message: 'Floor top' })
+                    : i18n._({
+                        id: 'editor.footprintHeightHandle.foundation',
+                        message: 'Foundation',
+                      })}
                 </span>
                 <span className="text-muted-foreground">
                   {formatLinearMeasurement(shown, unit, metricNotation)}

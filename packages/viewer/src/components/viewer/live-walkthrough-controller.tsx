@@ -369,7 +369,13 @@ function resolveHudInteract(target: FirstPersonInteractableTarget | null): Walkt
   if (!target) return null
   if (target.type === 'elevator') {
     return {
-      label: target.action === 'open-door' ? 'door button' : 'elevator button',
+      label:
+        target.action === 'open-door'
+          ? /* i18n */ { id: 'viewer.liveWalkthroughController.doorButton', message: 'door button' }
+          : /* i18n */ {
+              id: 'viewer.liveWalkthroughController.elevatorButton',
+              message: 'elevator button',
+            },
       verb: 'press',
     }
   }
@@ -392,28 +398,47 @@ function resolveHudInteract(target: FirstPersonInteractableTarget | null): Walkt
     if (parts.length === 0 && procedural.recipe.parts.some((part) => part.light)) {
       const state = useInteractive.getState()
       const isOn = state.procedural[target.id]?.lightsOn ?? state.lampDefault
-      return { label: procedural.name ?? 'Lights', verb: isOn ? 'turn off' : 'turn on' }
+      return {
+        label: procedural.name ?? /* i18n */ {
+          id: 'viewer.liveWalkthroughController.lights',
+          message: 'Lights',
+        },
+        verb: isOn ? 'turn off' : 'turn on',
+      }
     }
     const part = target.partId ? parts.find((entry) => entry.id === target.partId) : undefined
     const active = useInteractive.getState().procedural[target.id]?.parts
     const isOn = part ? Boolean(active?.[part.id]) : parts.some((entry) => active?.[entry.id])
     const kind = part?.kind ?? (parts.every((entry) => entry.kind === 'spin') ? 'spin' : 'hinge')
     return {
-      label: part?.label ?? procedural.name ?? 'item',
+      label: part?.label ??
+        procedural.name ?? /* i18n */ {
+          id: 'viewer.liveWalkthroughController.item',
+          message: 'item',
+        },
       verb: kind === 'spin' ? (isOn ? 'turn off' : 'turn on') : isOn ? 'close' : 'open',
     }
   }
   if (target.type === 'window') {
     if (node?.type !== 'window') return null
     const isOpen = getDisplayedWindowValue(target.id, node.operationState) > 0
-    return { label: node.name || 'window', verb: isOpen ? 'close' : 'open' }
+    return {
+      label: node.name || /* i18n */ {
+        id: 'viewer.liveWalkthroughController.window',
+        message: 'window',
+      },
+      verb: isOpen ? 'close' : 'open',
+    }
   }
 
   if (node?.type !== 'door') return null
   const isOpen = isOperationDoorType(node.doorType)
     ? getDisplayedDoorValue(target.id, 'operationState', node.operationState) > 0
     : getDisplayedDoorValue(target.id, 'swingAngle', node.swingAngle) > 0
-  return { label: node.name || 'door', verb: isOpen ? 'close' : 'open' }
+  return {
+    label: node.name || /* i18n */ { id: 'viewer.liveWalkthroughController.door', message: 'door' },
+    verb: isOpen ? 'close' : 'open',
+  }
 }
 
 /** E plays what the viewer's callout plays for the same door, window or switch. */

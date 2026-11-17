@@ -1,6 +1,6 @@
 'use client'
 
-import { type SiteNode, useScene } from '@pascal-app/core'
+import { type SiteNode, usePascalI18n, useScene } from '@pascal-app/core'
 import { useEffect, useSyncExternalStore } from 'react'
 import useDrawingView, { EDITOR_DRAWING_TYPE_OPTIONS } from '../../../store/use-drawing-view'
 import { cn } from '../../utils'
@@ -43,6 +43,7 @@ export function useSitePlanAvailable(): boolean {
  * site plan to show.
  */
 export function FloorplanDrawingTypeSwitch({ className }: { className?: string }) {
+  const i18n = usePascalI18n()
   const drawingType = useDrawingView((s) => s.drawingType)
   const setDrawingType = useDrawingView((s) => s.setDrawingType)
   const available = useSitePlanAvailable()
@@ -78,7 +79,7 @@ export function FloorplanDrawingTypeSwitch({ className }: { className?: string }
           onPointerDown={(event) => event.stopPropagation()}
           type="button"
         >
-          {option.label}
+          {i18n._(option.label)}
         </button>
       ))}
     </div>

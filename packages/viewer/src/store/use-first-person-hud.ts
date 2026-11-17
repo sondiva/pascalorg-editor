@@ -1,6 +1,13 @@
+import type { MessageDescriptor } from '@pascal-app/core'
 import { create } from 'zustand'
 
-export type WalkthroughInteract = { label: string; verb: string } | null
+/**
+ * The walkthrough prompt: `label` is the target's own name (scene data, shown
+ * as-is) or a fallback descriptor for an unnamed target; `verb` stays a code
+ * ('open', 'close', 'turn on', ...) because callers also match on it, and the
+ * HUD translates it when it renders.
+ */
+export type WalkthroughInteract = { label: string | MessageDescriptor; verb: string } | null
 
 export type FirstPersonHudState = {
   floorLabel: string | null

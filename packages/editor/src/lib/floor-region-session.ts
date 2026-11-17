@@ -5,6 +5,7 @@ import {
   type CeilingNode,
   ceilingPaintRegions,
   ceilingRegionsOwner,
+  type MessageDescriptor,
   type MultiPolygon,
   resolveCeilingHeight,
   roomFloorElevation,
@@ -44,9 +45,12 @@ import { addCeilingRegion, addFloorRegion } from './paint-regions'
 // (3D canvas, 2D plan) resolve pointers into plan points and call the actions
 // below.
 
-export const PICK_MATERIAL_MESSAGE = 'Pick a material first'
+export const PICK_MATERIAL_MESSAGE: MessageDescriptor = /* i18n */ {
+  id: 'editor.lib.floorRegionSession.pickAMaterialFirst',
+  message: 'Pick a material first',
+}
 
-export type FloorDraftCommit = { ok: true } | { ok: false; message: string }
+export type FloorDraftCommit = { ok: true } | { ok: false; message: string | MessageDescriptor }
 
 /** What a floor outline is drawn for, and how it commits. */
 export type FloorDraftPurpose = {
@@ -62,7 +66,10 @@ export type FloorDraftPurpose = {
   canStart?: () => boolean
   commit: (room: FloorRegionRoom, polygon: readonly FloorRegionPoint[]) => FloorDraftCommit
   /** Why a polygon point cannot be placed at `point`, or null. */
-  pointMessage?: (room: FloorRegionRoom, point: FloorRegionPoint) => string | null
+  pointMessage?: (
+    room: FloorRegionRoom,
+    point: FloorRegionPoint,
+  ) => string | MessageDescriptor | null
   /** Preview fill; the paint tint when unset. */
   fill?: string
 }
@@ -90,7 +97,7 @@ export type FloorRegionDraft =
       start: FloorRegionPoint
       end: FloorRegionPoint
       /** Why the released box was refused; the box stays put until the next press. */
-      refusal?: string | null
+      refusal?: string | MessageDescriptor | null
       /**
        * A persistent tool's click without a drag placed the first corner: the
        * box follows the pointer and the next click sets the opposite corner.
@@ -103,9 +110,9 @@ export type FloorRegionDraft =
       points: FloorRegionPoint[]
       cursor: FloorRegionPoint | null
       /** Why the live edge cannot be placed (red preview), or null. */
-      message: string | null
+      message: string | MessageDescriptor | null
       /** Why closing was refused; kept until the points change. */
-      refusal?: string | null
+      refusal?: string | MessageDescriptor | null
     }
 
 export type FloorRegionHover = {
@@ -228,7 +235,7 @@ export function polygonLiveMessage(
   cursor: FloorRegionPoint | null,
   closeRadius: number,
   room?: FloorRegionRoom,
-): string | null {
+): string | MessageDescriptor | null {
   if (!cursor) return null
   const closing = closesOnFirst(points, cursor, closeRadius)
   if (points.length && floorRegionEdgeCrosses(points, closing ? points[0]! : cursor, closing))
@@ -237,11 +244,13 @@ export function polygonLiveMessage(
 }
 
 /** Why the draft is red: the live edge, or the refused commit. */
-export function floorRegionDraftMessage(draft: FloorRegionDraft): string | null {
+export function floorRegionDraftMessage(
+  draft: FloorRegionDraft,
+): string | MessageDescriptor | null {
   return (draft.kind === 'polygon' ? draft.message : null) ?? draft.refusal ?? null
 }
 
-function setNotice(notice: string | null) {
+function setNotice(notice: MessageDescriptor | string | null) {
   if (usePaintRegionMode.getState().notice !== notice)
     usePaintRegionMode.getState().setNotice(notice)
 }

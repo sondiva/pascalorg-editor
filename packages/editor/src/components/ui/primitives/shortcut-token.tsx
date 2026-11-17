@@ -1,3 +1,5 @@
+'use client'
+
 import { Icon } from '@iconify/react'
 import { usePascalI18n } from '@pascal-app/core'
 import type * as React from 'react'
@@ -8,23 +10,23 @@ import { cn } from '../../../lib/utils'
 const MOUSE_SHORTCUTS = {
   Click: {
     icon: 'ph:mouse-left-click-fill',
-    label: 'Left click',
+    label: /* i18n */ { id: 'editor.primitives.shortcutToken.leftClick', message: 'Left click' },
   },
   'Left click': {
     icon: 'ph:mouse-left-click-fill',
-    label: 'Left click',
+    label: /* i18n */ { id: 'editor.primitives.shortcutToken.leftClick', message: 'Left click' },
   },
   'Middle click': {
     icon: 'qlementine-icons:mouse-middle-button-16',
-    label: 'Middle click',
+    label: /* i18n */ { id: 'editor.primitives.shortcutToken.middleClick', message: 'Middle click' },
   },
   'Right click': {
     icon: 'ph:mouse-right-click-fill',
-    label: 'Right click',
+    label: /* i18n */ { id: 'editor.primitives.shortcutToken.rightClick', message: 'Right click' },
   },
   Scroll: {
     icon: 'ph:mouse-scroll-fill',
-    label: 'Scroll',
+    label: /* i18n */ { id: 'editor.primitives.shortcutToken.scroll', message: 'Scroll' },
   },
 } as const
 
@@ -74,7 +76,7 @@ function ShortcutToken({ className, displayValue, value, ...props }: ShortcutTok
   const commandDisplay = IS_MAC ? '⌘' : 'Ctrl'
   const i18n = usePascalI18n()
   const commandLabel = toolHintKey(IS_MAC ? 'Command' : 'Control', i18n)
-  const mouseLabel = mouseShortcut ? toolHintKey(mouseShortcut.label, i18n) : undefined
+  const mouseLabel = mouseShortcut ? i18n._(mouseShortcut.label) : undefined
   const shown = displayValue ?? toolHintKey(value, i18n)
 
   return (

@@ -1,6 +1,6 @@
 'use client'
 
-import { type ValidateBuildJsonResult, validateBuildJson } from '@pascal-app/core'
+import { usePascalI18n, type ValidateBuildJsonResult, validateBuildJson } from '@pascal-app/core'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { MAX_IMPORT_BYTES, parseImportSrc } from '@/lib/import-src'
@@ -25,6 +25,7 @@ type Phase =
  * unchanged.
  */
 export function ImportClient({ src, name }: { src: string | null; name: string | null }) {
+  const i18n = usePascalI18n()
   const router = useRouter()
   const [phase, setPhase] = useState<Phase>({ kind: 'fetching' })
   const [sceneName, setSceneName] = useState(name ?? 'Imported scene')
@@ -141,10 +142,18 @@ export function ImportClient({ src, name }: { src: string | null; name: string |
   }, [phase, router, sceneName])
 
   if (phase.kind === 'fetching') {
-    return <p className="text-muted-foreground text-sm">Fetching the scene…</p>
+    return (
+      <p className="text-muted-foreground text-sm">
+        {i18n._({ id: 'app.import.importClient.fetchingTheScene', message: 'Fetching the scene…' })}
+      </p>
+    )
   }
   if (phase.kind === 'creating') {
-    return <p className="text-muted-foreground text-sm">Creating the scene…</p>
+    return (
+      <p className="text-muted-foreground text-sm">
+        {i18n._({ id: 'app.import.importClient.creatingTheScene', message: 'Creating the scene…' })}
+      </p>
+    )
   }
   if (phase.kind === 'error') {
     return (
@@ -161,7 +170,7 @@ export function ImportClient({ src, name }: { src: string | null; name: string |
     <div className="space-y-6">
       <div className="rounded-xl border border-border/60 bg-background p-6">
         <label className="mb-1 block font-medium text-muted-foreground text-xs uppercase">
-          Scene name
+          {i18n._({ id: 'app.import.importClient.sceneName', message: 'Scene name' })}
         </label>
         <input
           className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm"
@@ -169,11 +178,21 @@ export function ImportClient({ src, name }: { src: string | null; name: string |
           value={sceneName}
         />
 
-        <p className="mt-4 mb-1 font-medium text-muted-foreground text-xs uppercase">Contents</p>
+        <p className="mt-4 mb-1 font-medium text-muted-foreground text-xs uppercase">
+          {i18n._({ id: 'app.import.importClient.contents', message: 'Contents' })}
+        </p>
         <p className="text-sm">
-          {result.stats.total} node{result.stats.total === 1 ? '' : 's'}
+          {i18n._({
+            id: 'app.import.importClient.nodes',
+            message: '{total, plural, one {# node} other {# nodes}}',
+            values: { total: result.stats.total },
+          })}
           {result.stats.floorAreaM2 > 0
-            ? ` · ${Math.round(result.stats.floorAreaM2)} m² of floor`
+            ? i18n._({
+                id: 'app.import.importClient.floorArea',
+                message: ' · {area} m² of floor',
+                values: { area: Math.round(result.stats.floorAreaM2) },
+              })
             : ''}
         </p>
         {typeEntries.length > 0 && (
@@ -223,7 +242,12 @@ export function ImportClient({ src, name }: { src: string | null; name: string |
         onClick={handleImport}
         type="button"
       >
-        {phase.createError ? 'Try again' : 'Import as a new scene'}
+        {phase.createError
+          ? i18n._({ id: 'app.import.importClient.tryAgain', message: 'Try again' })
+          : i18n._({
+              id: 'app.import.importClient.importAsANewScene',
+              message: 'Import as a new scene',
+            })}
       </button>
     </div>
   )

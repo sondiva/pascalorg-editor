@@ -4,6 +4,7 @@ import {
   type AnyNode,
   type AnyNodeId,
   type ConstructionDrawingType,
+  defaultI18n,
   FLOORPLAN_VIEW_ROTATION_DEG,
   type FloorplanGeometry,
   type FloorplanMetricNotation,
@@ -193,8 +194,16 @@ export async function exportFloorplanPdf(scope: FloorplanExportScope): Promise<v
   const navigationAzimuth = navigationSyncPoseStore.getState().pose?.azimuth
   const drawingType = useDrawingView.getState().drawingType
   const annotationLayoutOverrides = useDrawingView.getState().annotationLayoutOverrides
-  const drawingLabel =
-    DRAWING_TYPE_OPTIONS.find((option) => option.id === drawingType)?.label ?? 'Floor plan'
+  // The export runs outside any editor-local scope, so it resolves through the
+  // default scope. In the standalone app the locale lives in the editor-local
+  // scope and the default stays English, so the PDF header keeps its English
+  // label; a host that calls setLocale gets its own locale here.
+  const drawingLabel = defaultI18n._(
+    DRAWING_TYPE_OPTIONS.find((option) => option.id === drawingType)?.label ?? {
+      id: 'editor.lib.floorplanExport.floorPlan',
+      message: 'Floor plan',
+    },
+  )
   const levels = resolveExportLevels(nodes)
   if (levels.length === 0) {
     console.warn('[floorplan-export] no level to export')

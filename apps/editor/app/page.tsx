@@ -1,10 +1,13 @@
+import { createI18n } from '@pascal-app/core'
 import { Settings } from 'lucide-react'
+import { headers } from 'next/headers'
 import Link from 'next/link'
 import { AppHeader, AppShell, ICON_BUTTON, PascalMark } from '@/components/app-shell'
 import { CreateProjectButton } from '@/components/create-project-button'
 import { SceneCard, type SceneCardData } from '@/components/scene-card'
 import { getSceneOperations } from '@/lib/scene-store-server'
 import { sceneThumbnailUrl } from '@/lib/scene-thumbnails'
+import { PASCAL_LOCALE_HEADER, resolveUiLocale } from '@/lib/ui-locale'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,6 +43,7 @@ function nextProjectNumber(names: string[]): number {
 }
 
 export default async function HomePage() {
+  const i18n = createI18n({ locale: resolveUiLocale((await headers()).get(PASCAL_LOCALE_HEADER)) })
   const scenes = await fetchScenes()
   const nextNumber = nextProjectNumber(scenes.map((scene) => scene.name))
 
@@ -47,7 +51,12 @@ export default async function HomePage() {
     <AppShell>
       <AppHeader>
         <CreateProjectButton nextNumber={nextNumber} />
-        <Link aria-label="Settings" className={ICON_BUTTON} href="/settings" title="Settings">
+        <Link
+          aria-label={i18n._({ id: 'app.home.settings', message: 'Settings' })}
+          className={ICON_BUTTON}
+          href="/settings"
+          title={i18n._({ id: 'app.home.settings', message: 'Settings' })}
+        >
           <Settings className="h-4 w-4" />
         </Link>
       </AppHeader>
@@ -57,13 +66,18 @@ export default async function HomePage() {
           <div className="flex flex-col items-center justify-center gap-4 py-32 text-center">
             <PascalMark className="h-10 w-10" />
             <p className="max-w-xs text-muted-foreground text-sm">
-              Your projects live here. Start one to begin designing.
+              {i18n._({
+                id: 'app.home.emptyState',
+                message: 'Your projects live here. Start one to begin designing.',
+              })}
             </p>
             <CreateProjectButton nextNumber={nextNumber} />
           </div>
         ) : (
           <>
-            <h1 className="mb-6 font-semibold text-lg">Projects</h1>
+            <h1 className="mb-6 font-semibold text-lg">
+              {i18n._({ id: 'app.home.projects', message: 'Projects' })}
+            </h1>
             <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {scenes.map((scene) => (
                 <SceneCard key={scene.id} scene={scene} />

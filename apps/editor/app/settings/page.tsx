@@ -1,3 +1,4 @@
+import { createI18n } from '@pascal-app/core'
 import { ArrowLeft, ExternalLink } from 'lucide-react'
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
@@ -6,9 +7,16 @@ import type { ReactNode } from 'react'
 import { AppHeader, AppShell, SECONDARY_PILL } from '@/components/app-shell'
 import { resolvePublicUrl } from '@/lib/public-url'
 import { resolveAuthMode } from '@/lib/self-host-auth'
+import { PASCAL_LOCALE_HEADER, resolveUiLocale } from '@/lib/ui-locale'
 
 export const dynamic = 'force-dynamic'
-export const metadata: Metadata = { title: 'Settings · Pascal' }
+
+export async function generateMetadata(): Promise<Metadata> {
+  const i18n = createI18n({ locale: resolveUiLocale((await headers()).get(PASCAL_LOCALE_HEADER)) })
+  return {
+    title: i18n._({ id: 'app.settings.pageTitle', message: 'Settings · Pascal' }),
+  }
+}
 
 /** Server components see headers, not a Request; the auth helpers want the latter. */
 async function currentRequest(): Promise<Request> {
@@ -19,6 +27,7 @@ async function currentRequest(): Promise<Request> {
 }
 
 export default async function SettingsPage() {
+  const i18n = createI18n({ locale: resolveUiLocale((await headers()).get(PASCAL_LOCALE_HEADER)) })
   const request = await currentRequest()
   const publicUrl = resolvePublicUrl(request)
   const authMode = resolveAuthMode(request)
@@ -33,49 +42,79 @@ export default async function SettingsPage() {
           href="/"
         >
           <ArrowLeft className="h-4 w-4" />
-          All projects
+          {i18n._({ id: 'app.settings.allProjects', message: 'All projects' })}
         </Link>
-        <h1 className="mt-4 mb-8 font-semibold text-lg">Settings</h1>
+        <h1 className="mt-4 mb-8 font-semibold text-lg">
+          {i18n._({ id: 'app.settings.heading', message: 'Settings' })}
+        </h1>
 
         <div className="flex flex-col gap-6">
-          <Section title="Instance">
-            <Row label="Public URL">
+          <Section title={i18n._({ id: 'app.settings.instance', message: 'Instance' })}>
+            <Row label={i18n._({ id: 'app.settings.publicUrl', message: 'Public URL' })}>
               <code className="font-mono">{publicUrl}</code>
             </Row>
-            <Row label="Version">{process.env.PASCAL_RUNTIME_VERSION || 'development'}</Row>
-            <Row label="Data directory">
+            <Row label={i18n._({ id: 'app.settings.version', message: 'Version' })}>
+              {/* i18n-ignore: fallback value when no version is set, not user copy */}
+              {process.env.PASCAL_RUNTIME_VERSION || 'development'}
+            </Row>
+            <Row label={i18n._({ id: 'app.settings.dataDirectory', message: 'Data directory' })}>
+              {/* i18n-ignore: default filesystem path, not user copy */}
               <code className="font-mono">{process.env.PASCAL_DATA_DIR || '~/.pascal/data'}</code>
             </Row>
           </Section>
 
-          <Section title="Connect an agent">
-            <Row label="Scene API">
+          <Section title={i18n._({ id: 'app.settings.connectAgent', message: 'Connect an agent' })}>
+            <Row label={i18n._({ id: 'app.settings.sceneApi', message: 'Scene API' })}>
+              {/* i18n-ignore: API path suffix, not user copy */}
               <code className="font-mono">{publicUrl}/api/scenes</code>
             </Row>
-            <Row label="Agent token">{agentTokenConfigured ? 'Configured' : 'Not configured'}</Row>
+            <Row label={i18n._({ id: 'app.settings.agentToken', message: 'Agent token' })}>
+              {agentTokenConfigured
+                ? i18n._({ id: 'app.settings.configured', message: 'Configured' })
+                : i18n._({ id: 'app.settings.notConfigured', message: 'Not configured' })}
+            </Row>
             <p className="px-4 py-3 text-muted-foreground text-xs">
               {agentTokenConfigured
-                ? 'Agents and scripts send the PASCAL_SCENE_API_TOKEN value in an Authorization: Bearer header.'
-                : 'Set PASCAL_SCENE_API_TOKEN on this instance, then send it in an Authorization: Bearer header from agents and scripts.'}
+                ? i18n._({
+                    id: 'app.settings.agentTokenConfiguredHint',
+                    message:
+                      'Agents and scripts send the PASCAL_SCENE_API_TOKEN value in an Authorization: Bearer header.',
+                  })
+                : i18n._({
+                    id: 'app.settings.agentTokenNotConfiguredHint',
+                    message:
+                      'Set PASCAL_SCENE_API_TOKEN on this instance, then send it in an Authorization: Bearer header from agents and scripts.',
+                  })}
             </p>
           </Section>
 
           {authMode === 'password' && (
-            <Section title="Account">
+            <Section title={i18n._({ id: 'app.settings.account', message: 'Account' })}>
               <div className="flex items-center justify-between gap-4 px-4 py-3">
-                <p className="text-muted-foreground text-sm">Signed in as the instance admin.</p>
+                <p className="text-muted-foreground text-sm">
+                  {i18n._({
+                    id: 'app.settings.signedInAsAdmin',
+                    message: 'Signed in as the instance admin.',
+                  })}
+                </p>
                 <form action="/api/auth/logout" method="post">
                   <button className={SECONDARY_PILL} type="submit">
-                    Sign out
+                    {i18n._({ id: 'app.settings.signOut', message: 'Sign out' })}
                   </button>
                 </form>
               </div>
             </Section>
           )}
 
-          <Section title="About">
-            <ExternalRow href="https://github.com/pascalorg/editor" label="Source code" />
-            <ExternalRow href="https://editor.pascal.app/docs" label="Documentation" />
+          <Section title={i18n._({ id: 'app.settings.about', message: 'About' })}>
+            <ExternalRow
+              href="https://github.com/pascalorg/editor"
+              label={i18n._({ id: 'app.settings.sourceCode', message: 'Source code' })}
+            />
+            <ExternalRow
+              href="https://editor.pascal.app/docs"
+              label={i18n._({ id: 'app.settings.documentation', message: 'Documentation' })}
+            />
           </Section>
         </div>
       </main>

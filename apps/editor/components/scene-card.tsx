@@ -1,5 +1,6 @@
 'use client'
 
+import { type MessageDescriptor, usePascalI18n } from '@pascal-app/core'
 import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -20,6 +21,7 @@ export interface SceneCardData {
 type Dialog = 'rename' | 'delete' | null
 
 export function SceneCard({ scene }: { scene: SceneCardData }) {
+  const i18n = usePascalI18n()
   const [menuOpen, setMenuOpen] = useState(false)
   const [dialog, setDialog] = useState<Dialog>(null)
   const [thumbnailFailed, setThumbnailFailed] = useState(false)
@@ -71,7 +73,11 @@ export function SceneCard({ scene }: { scene: SceneCardData }) {
         <div className="px-1.5 pt-2.5 pb-1">
           <h2 className="truncate pr-8 font-medium text-sm">{scene.name}</h2>
           <p className="mt-0.5 text-muted-foreground text-xs">
-            {scene.nodeCount} {scene.nodeCount === 1 ? 'node' : 'nodes'} · Updated{' '}
+            {scene.nodeCount}{' '}
+            {scene.nodeCount === 1
+              ? i18n._({ id: 'app.sceneCard.node', message: 'node' })
+              : i18n._({ id: 'app.sceneCard.nodes', message: 'nodes' })}{' '}
+            {i18n._({ id: 'app.sceneCard.updated', message: '· Updated' })}{' '}
             <time dateTime={scene.updatedAt}>{scene.updatedLabel}</time>
           </p>
         </div>
@@ -81,7 +87,11 @@ export function SceneCard({ scene }: { scene: SceneCardData }) {
         <button
           aria-expanded={menuOpen}
           aria-haspopup="menu"
-          aria-label={`Actions for ${scene.name}`}
+          aria-label={i18n._({
+            id: 'app.sceneCard.actionsForName',
+            message: 'Actions for {name}',
+            values: { name: scene.name },
+          })}
           className={cn(
             'flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-background hover:text-foreground',
             menuOpen && 'bg-background text-foreground',
@@ -103,7 +113,7 @@ export function SceneCard({ scene }: { scene: SceneCardData }) {
               type="button"
             >
               <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-              Rename
+              {i18n._({ id: 'app.sceneCard.rename', message: 'Rename' })}
             </button>
             <button
               className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-destructive hover:bg-destructive/10"
@@ -112,7 +122,7 @@ export function SceneCard({ scene }: { scene: SceneCardData }) {
               type="button"
             >
               <Trash2 className="h-3.5 w-3.5" />
-              Delete
+              {i18n._({ id: 'app.sceneCard.delete', message: 'Delete' })}
             </button>
           </div>
         )}
@@ -124,7 +134,10 @@ export function SceneCard({ scene }: { scene: SceneCardData }) {
   )
 }
 
-const CONFLICT_MESSAGE = 'This project changed since the page loaded. Reload and try again.'
+const CONFLICT_MESSAGE: MessageDescriptor = /* i18n */ {
+  id: 'app.sceneCard.conflict',
+  message: 'This project changed since the page loaded. Reload and try again.',
+}
 
 /** Opens a native modal dialog on mount; Escape, backdrop and Cancel all end in `onClose`. */
 function useModal(onClose: () => void) {
@@ -166,6 +179,7 @@ function ModalFrame({
 }
 
 function RenameDialog({ scene, onClose }: { scene: SceneCardData; onClose: () => void }) {
+  const i18n = usePascalI18n()
   const router = useRouter()
   const dialogRef = useModal(onClose)
   const [name, setName] = useState(scene.name)
@@ -188,27 +202,41 @@ function RenameDialog({ scene, onClose }: { scene: SceneCardData; onClose: () =>
         body: JSON.stringify({ name: trimmed }),
       })
       if (response.status === 409) {
-        setError(CONFLICT_MESSAGE)
+        setError(i18n._(CONFLICT_MESSAGE))
         return
       }
       if (!response.ok) {
-        setError(`Rename failed (${response.status})`)
+        setError(
+          i18n._({
+            id: 'app.sceneCard.renameFailedStatus',
+            message: 'Rename failed ({status})',
+            values: { status: response.status },
+          }),
+        )
         return
       }
       dialogRef.current?.close()
       router.refresh()
     } catch {
-      setError('Could not reach the editor.')
+      setError(
+        i18n._({
+          id: 'app.sceneCard.couldNotReachTheEditor',
+          message: 'Could not reach the editor.',
+        }),
+      )
     } finally {
       setPending(false)
     }
   }
 
   return (
-    <ModalFrame dialogRef={dialogRef} title="Rename project">
+    <ModalFrame
+      dialogRef={dialogRef}
+      title={i18n._({ id: 'app.sceneCard.renameProject', message: 'Rename project' })}
+    >
       <form className="mt-4 flex flex-col gap-3" onSubmit={handleSubmit}>
         <input
-          aria-label="Project name"
+          aria-label={i18n._({ id: 'app.sceneCard.projectName', message: 'Project name' })}
           // biome-ignore lint/a11y/noAutofocus: the dialog exists to edit this field
           autoFocus
           className="rounded-lg border border-input bg-accent px-3 py-2 text-sm outline-none focus:border-ring"
@@ -225,10 +253,12 @@ function RenameDialog({ scene, onClose }: { scene: SceneCardData; onClose: () =>
             onClick={() => dialogRef.current?.close()}
             type="button"
           >
-            Cancel
+            {i18n._({ id: 'app.sceneCard.cancel', message: 'Cancel' })}
           </button>
           <button className={PRIMARY_PILL} disabled={pending || !name.trim()} type="submit">
-            {pending ? 'Saving…' : 'Save'}
+            {pending
+              ? i18n._({ id: 'app.sceneCard.saving', message: 'Saving…' })
+              : i18n._({ id: 'app.sceneCard.save', message: 'Save' })}
           </button>
         </div>
       </form>
@@ -237,6 +267,7 @@ function RenameDialog({ scene, onClose }: { scene: SceneCardData; onClose: () =>
 }
 
 function DeleteDialog({ scene, onClose }: { scene: SceneCardData; onClose: () => void }) {
+  const i18n = usePascalI18n()
   const router = useRouter()
   const dialogRef = useModal(onClose)
   const [error, setError] = useState<string | null>(null)
@@ -251,31 +282,49 @@ function DeleteDialog({ scene, onClose }: { scene: SceneCardData; onClose: () =>
         headers: { 'If-Match': `"${scene.version}"` },
       })
       if (response.status === 409) {
-        setError(CONFLICT_MESSAGE)
+        setError(i18n._(CONFLICT_MESSAGE))
         return
       }
       if (!response.ok && response.status !== 404) {
-        setError(`Delete failed (${response.status})`)
+        setError(
+          i18n._({
+            id: 'app.sceneCard.deleteFailedStatus',
+            message: 'Delete failed ({status})',
+            values: { status: response.status },
+          }),
+        )
         return
       }
       dialogRef.current?.close()
       router.refresh()
     } catch {
-      setError('Could not reach the editor.')
+      setError(
+        i18n._({
+          id: 'app.sceneCard.couldNotReachTheEditor',
+          message: 'Could not reach the editor.',
+        }),
+      )
     } finally {
       setPending(false)
     }
   }
 
   return (
-    <ModalFrame dialogRef={dialogRef} title="Delete project?">
+    <ModalFrame
+      dialogRef={dialogRef}
+      title={i18n._({ id: 'app.sceneCard.deleteProject', message: 'Delete project?' })}
+    >
       <p className="mt-2 text-muted-foreground text-sm">
-        “{scene.name}” will be removed from this editor, along with everything in it.
+        {i18n._({
+          id: 'app.sceneCard.nameWillBeRemovedFromThis',
+          message: '“{name}” will be removed from this editor, along with everything in it.',
+          values: { name: scene.name },
+        })}
       </p>
       {error && <p className="mt-3 text-destructive text-xs">{error}</p>}
       <div className="mt-5 flex justify-end gap-2">
         <button className={SECONDARY_PILL} onClick={() => dialogRef.current?.close()} type="button">
-          Cancel
+          {i18n._({ id: 'app.sceneCard.cancel', message: 'Cancel' })}
         </button>
         <button
           className="inline-flex items-center justify-center rounded-lg bg-destructive px-4 py-1.5 font-medium text-sm text-white transition-colors hover:bg-destructive/90 disabled:opacity-50"
@@ -283,7 +332,9 @@ function DeleteDialog({ scene, onClose }: { scene: SceneCardData; onClose: () =>
           onClick={handleDelete}
           type="button"
         >
-          {pending ? 'Deleting…' : 'Delete'}
+          {pending
+            ? i18n._({ id: 'app.sceneCard.deleting', message: 'Deleting…' })
+            : i18n._({ id: 'app.sceneCard.delete', message: 'Delete' })}
         </button>
       </div>
     </ModalFrame>
